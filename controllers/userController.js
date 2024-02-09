@@ -2,7 +2,7 @@ const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
-const  transporter  = require("../config/emailConfig");
+const transporter = require("../config/emailConfig");
 
 const createToken = (_id) => {
   const jwtSecreteKey = process.env.JWT_SECRETE_KEY;
@@ -204,133 +204,58 @@ const sendUserPasswordResetEmail = async (req, res) => {
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to: user.email,
-      subject:
-        "You Requested for password reset so this email is regarding password reset.",
-      html: `
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Document</title>
-                    <style>
-                        *{
-                            box-sizing: border-box;
-                        }
-                        table{
-                            border: transparent;
-                            background-color: rgb(220, 216, 216);
-                            border: none;
-                            border-spacing: 0px;
-                            border-radius: 0.25rem; 
-                            /* box-shadow: 2px 3px 10px;  */
-                        
-                        }
-                        body{
-                            /* background-color: rgb(248, 225, 217); */
-                            display: flex;
-                            flex-direction: column-reverse;
-                            justify-content: center;
-                            align-items: center;
-                            font-size: 16px;
-                        }
-                        .title{
-                            margin-bottom: 1rem;
-                            overflow: hidden;
-                            color: rgb(4, 55, 150);
-                            font-size: 2em;
-                            font-weight: bolder;
-                        
-                            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                            padding-top: 1rem;
-                            padding-bottom: 1rem;
-                        }
-                        tr{
-                            text-align: center;
-                        }
-                        
-                        .top{
-                            background-color: rgb(4, 55, 150);
-                            color: white;
-                            padding-bottom: 1rem;
-                        }
-                        .msg{
-                            font-size: large;
-                            margin-top: 1.5rem;
-                            margin-bottom: 1.5rem;
-                        }
-                
-                        
-                        .code{
-                            border-radius: 4px;
-                            color: white;
-                            font-size: 2em;
-                            display: initial;
-                            padding-left: 1rem;
-                            padding-right: 1rem;
-                            font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif ;
-                
-                        }
-                
-                        .contactus{
-                            margin-top: 1rem;
-                            padding-top: 1rem;
-                            /* line-height: 30px; */
-                            font-size: 1.5rem;
-                            padding-bottom: 1rem;
-                        
-                        }
-                        .copywrite{
-                            background-color: rgb(4, 55, 150);
-                            color: white;
-                            width: 100%;
-                            padding-left: 0px;
-                            padding-right: 0px;
-                            height: 1.75rem;
-                            text-align: center;
-                            padding-top: 5px;
-                            border-bottom-left-radius: 0.25rem; 
-                            border-bottom-right-radius: 0.25rem;
-                        }
-                    
-                    </style>
-                </head>
-                <body>
-                    <table  style="background-color: rgb(237, 242, 243);">
-                        <th class="title"> Prakash & Company</th>
-                        <tbody>
-                            <tr class="top">
-                                <td>
-                                    <img src="https://drive.google.com/uc?export=view&id=1GhR10Ud4KMVY5dHahmrCQMzGRATkZGtk" alt="" width="150">
-                                    <p>Welcome To Prakash and Company!<br><br>
-                                        <span style="font-size: 2rem;">Reset Your Password</span>
-                                    </p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="msg">Hi, ${user.name}<br>Please Click Below Link to Reset Your Password! This will redirect to reset form where you will have to give new password.</div>
-                                    <div class="code"><a href=${reset_password_link}>Click here</a></div>
-                                    <div><br></div>
-                                </td>
-                            </tr>
-                        <tr>
-                        
-                        </tr>
-                            <tr class="footer">
-                                <td style=" background-color: rgb(217, 223, 228);">
-                                    <div class="contactus"><span style="color: rgb(4, 55, 150);  font-weight: bold;">Get in touch</span><br>Phone: +91-8873323323<br>Email: ${process.env.EMAIL_FROM}</div>
-                                    <div class="copywrite">Copyrights © Prakash & Company || All Rights Reserved</div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </body>
-                </html>`, // Html Body Ending Here
-    });
+      subject: "Reset your Expense Management System account password",
+      html: `<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Password reset</title>
+                <style>
+                  .btn {
+                    background-color: #04AA6D;
+                    border: none;
+                    color: white;
+                    padding: 8px 20px;
+                    text-align: center;
+                    text-decoration: none;
+                    display: inline-block;
+                    font-size: 16px;
+                    margin: 2px 2px; 
+                    border-radius: 5px;
+                  }
+                  .btn a {
+                    color: white;
+                    text-decoration: none;
+                  }
 
-    // console.log(info);
+                  .btn:hover {
+                    background-color: green;
+                  }
+
+                </style>
+              </head>
+              <body>
+                <div>
+                  <p>Hi, <span style="font-weight: bold;">${user.name}<span>,</p> 
+
+                  <p>You are receiving this because you (or someone else) requested 
+                  the reset of your <a href="https://expense-management-system-prakash.netlify.app/"> Expense Management System </a> user account.
+                  <br>
+                  Select the button to reset your password.</p>
+
+                  <button class = "btn"><a href=${reset_password_link}>Reset Password</a></button>
+                  
+                  <p>If this was you, you can safely ignore this email.<br>
+                  If not, please reach out to us at <a href="mailto:${process.env.EMAIL_FROM}">email us</a> for help.</p>
+
+                  <p>Thanks,<br>
+                  Prakash & Company.</p>
+
+                </div>
+              </body> `, // Html Body Ending Here
+    });
 
     res.status(200).json({
       status: "success",
@@ -374,7 +299,6 @@ const resetUserPasswordThroughForgotPassword = async (req, res) => {
         message: "Invalid or Expired Token...!",
       });
     }
-    console.log(payload);
 
     // Now hash password and update in database
     const salt = await bcrypt.genSalt(Number(process.env.BCRYPT_SALT));
@@ -382,6 +306,35 @@ const resetUserPasswordThroughForgotPassword = async (req, res) => {
 
     const result = await userModel.findByIdAndUpdate(user._id, {
       $set: { password: newHashPassword },
+    });
+
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: user.email,
+      subject: "Your password has been changed successfully.",
+      html: `<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Password reset successful</title>
+                  </head>
+                  <body>
+                    <div>
+                      <p>Hi, <span style="font-weight: bold;">${user.name}<span>,</p> 
+
+                      <p>You are receiving this because you (or someone else) have changed the 
+                      password of your <a href="https://expense-management-system-prakash.netlify.app/"> Expense Management System </a> user account.</p>
+                     
+                      <p>If this was you, you can safely ignore this email.<br>
+                      If not, please reach out to us at <a href="mailto:${process.env.EMAIL_FROM}">email us</a> for help.</p>
+
+                      <p>Thanks,<br>
+                      Prakash & Company.</p>
+
+                    </div>
+                  </body>`, // Html Body Ending Here
     });
 
     res.status(200).json({
