@@ -98,19 +98,16 @@ const registerController = async (req, res) => {
     if (!info) {
       return res.status(400).json({
         status: "failed",
-        message: "Something went wrong in sending email verification link...!",
+        message:
+          "Something went wrong in sending email for email verification link...!",
       });
     }
 
     res.status(200).json({
       success: true,
-      newUser,
+      newUser: { name: newUser.name, token: jwt_token },
       Status: "Success",
       message: "Successfully Registered...!",
-      _id: newUser._id,
-      name,
-      email,
-      jwt_token,
     });
   } catch (error) {
     console.log(error);
@@ -355,13 +352,9 @@ const loginController = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      user,
+      user: { name: user.name, token: jwt_token },
       Status: "Success",
       message: "Successfully LoggedIn...!",
-      _id: user._id,
-      name: user.name,
-      email,
-      jwt_token,
     });
   } catch (error) {
     console.log(error);
@@ -374,7 +367,71 @@ const loginController = async (req, res) => {
 
 // Controller for fetching details of Logged User: Login required
 const loggedUser = async (req, res) => {
-  res.send({ user: req.user });
+  res.send({
+    user: {
+      name: req.user.name,
+      email: req.user.email,
+      phoneNumber: req.user.phoneNumber,
+      address: req.user.address,
+      birthDate: req.user.birthDate,
+      favouriteSport: req.user.favouriteSport,
+    },
+  });
+};
+
+// Controller for user profile update: Login required
+const updateUserProfile = async (req, res) => {
+  const { name, email, phoneNumber, address, birthDate, favouriteSport } =
+    req.body;
+
+  console.log("Req body: ", req.body);
+  try {
+    if (
+      !name ||
+      !email ||
+      !phoneNumber ||
+      !address ||
+      !birthDate ||
+      !favouriteSport
+    ) {
+      return res
+        .status(400)
+        .json({ status: "failed", message: "All fields are required...!" });
+    }
+
+    // BTW No need of this validation because user is already logged in
+    const user = await userModel.findOne({ email: email });
+    if (!user || !req.user) {
+      return res.status(400).json({
+        status: "failed",
+        message: "User doesn't exist or Unauthorize user...!",
+      });
+    }
+
+    await userModel.findByIdAndUpdate(req.user._id, {
+      $set: {
+        name: name,
+        email: email,
+        phoneNumber: String(phoneNumber),
+        address: address,
+        birthDate: String(birthDate),
+        favouriteSport: favouriteSport,
+      },
+    });
+
+    const updateUser = await userModel.findById(req.user._id);
+
+    res.status(200).json({
+      status: "success",
+      message: "User profile updated successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({
+      status: "failed",
+      message: "Something went wrong in updating user profile...!",
+    });
+  }
 };
 
 // Reset User Password : Login required
@@ -382,7 +439,6 @@ const loggedUser = async (req, res) => {
 // This is for if user is logged in then he can reset his password
 const changePassword = async (req, res) => {
   const { oldPassword, newPassword, confirmPassword } = req.body;
-  const { _id } = req.user._id; // by params we get things which is in links
   try {
     if (!oldPassword || !newPassword || !confirmPassword) {
       return res
@@ -390,13 +446,20 @@ const changePassword = async (req, res) => {
         .json({ status: "failed", message: "All fields are required...!" });
     }
 
+    // BTW No need of this validation because user is already logged in
+    if (!req.user) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Unauthorize user...!",
+      });
+    }
     // Validate user password first
-    const user = await userModel.findById(_id);
+    const user = await userModel.findById(req.user._id);
     const validatePassword = await bcrypt.compare(oldPassword, user.password);
     if (!validatePassword) {
       return res.status(400).json({
         Status: "failed",
-        message: "Invalid old password...!",
+        message: "Incorrect old password...!",
       });
     }
 
@@ -410,7 +473,7 @@ const changePassword = async (req, res) => {
     if (oldPassword === newPassword) {
       return res.status(400).json({
         status: "failed",
-        message: "oldPassword and newPassword should not be same...!",
+        message: "Old Password and New Password should not be same...!",
       });
     }
 
@@ -683,6 +746,7 @@ module.exports = {
   registerController,
   verifyEmail,
   loginController,
+  updateUserProfile,
   changePassword,
   sendUserPasswordResetEmail,
   loggedUser,
