@@ -85,7 +85,10 @@ const registerController = async (req, res) => {
     const emailVerificationLink = `${CLIENT_URL}/email-verification/${newUser._id}/${jwt_token}`;
     // Now Send Email
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: {
+        name: "Expense Management System",
+        address: process.env.EMAIL_FROM,
+      },
       to: newUser.email,
       subject: "Please verify your email address",
       html: emailVerificationEmail(
@@ -181,7 +184,10 @@ const sendEmailForOTPVerification = async (req, res) => {
 
     // Now send the OTP to user's email
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: {
+        name: "Expense Management System",
+        address: process.env.EMAIL_FROM,
+      },
       to: user.email,
       subject: "OTP for Email Verification",
       html: OTPVerificationEmail(user, OTP, process.env.EMAIL_FROM),
@@ -333,7 +339,10 @@ const loginController = async (req, res) => {
       const emailVerificationLink = `${CLIENT_URL}/email-verification/${user._id}/${jwt_token}`;
       // Now Send Email
       const info = await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
+        from: {
+          name: "Expense Management System",
+          address: process.env.EMAIL_FROM,
+        },
         to: user.email,
         subject: "Please verify your email address",
         html: emailVerificationEmail(
@@ -486,7 +495,10 @@ const changePassword = async (req, res) => {
 
     // Send the mail to user that his password has been changed successfully.
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: {
+        name: "Expense Management System",
+        address: process.env.EMAIL_FROM,
+      },
       to: user.email,
       subject: "Your password has been changed successfully.",
       html: changedPasswordSuccess(user, process.env.EMAIL_FROM),
@@ -529,7 +541,10 @@ const sendUserPasswordResetEmail = async (req, res) => {
 
     // Now Send Email
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: {
+        name: "Expense Management System",
+        address: process.env.EMAIL_FROM,
+      },
       to: user.email,
       subject: "Reset your Expense Management System account password",
       html: resetPasswordEmail(
@@ -591,7 +606,10 @@ const resetUserPasswordThroughForgotPassword = async (req, res) => {
     });
 
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: {
+        name: "Expense Management System",
+        address: process.env.EMAIL_FROM,
+      },
       to: user.email,
       subject: "Your password has been reset successfully.",
       html: resetPasswordSuccess(user, process.env.EMAIL_FROM),
