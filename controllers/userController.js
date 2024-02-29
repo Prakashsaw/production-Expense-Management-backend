@@ -22,7 +22,7 @@ const createToken = (_id) => {
 
 //Register Callback: Login not required
 const registerController = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, phoneNumber, password } = req.body;
 
   try {
     // Ckeck that any field not be empty
@@ -68,6 +68,7 @@ const registerController = async (req, res) => {
     const newUser = new userModel({
       name: name,
       email: email,
+      phoneNumber: phoneNumber,
       password: passwordHashingCode,
     });
     await newUser.save();
@@ -284,7 +285,7 @@ const verifyEmailThroughOTP = async (req, res) => {
 };
 
 // Login Callback: Login not required
-const loginController = async (req, res) => {
+const loginControllerThroughEmail = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -763,7 +764,7 @@ const verifyMobileNumberThroughOTP = async (req, res) => {
 module.exports = {
   registerController,
   verifyEmail,
-  loginController,
+  loginControllerThroughEmail,
   updateUserProfile,
   changePassword,
   sendUserPasswordResetEmail,
