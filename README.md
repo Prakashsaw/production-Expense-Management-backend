@@ -103,20 +103,25 @@ Once the setup is complete, the app will be running on your local system.
 
 ---
 
-## 🔥 Features  
+## 🔥 Features
 
 - **🔒 Secure User Authentication:** Register, log in, and log out securely.  
 - **📧 Email Verification:** Verify accounts via a confirmation link sent to the email.  
 - **🔑 Password Management:** Forgot password functionality with email reset link.  
 - **📝 User Profile Management:** Update profile details and change passwords after login.  
+
 - **💰 Transaction Management:**  
   - Add, edit, and delete financial transactions with confirmation prompts.  
   - Categorize transactions into **income** or **expenses**.  
+  - **🔍 Search Transactions:** Quickly search for transactions using keywords.  
+  - **📤 Export to Excel:** Download filtered transactions as an Excel file with a **date-based filename**.  
+
 - **📊 Financial Overview:**  
   - View transaction history **weekly, monthly, and yearly**.  
   - Filter transactions by **custom date range**.  
   - Filter by **income, expenses, or both**.  
-- **📈 Data Analytics:** Interactive **graphs & charts** for expense tracking.  
+
+- **📈 Data Analytics:** Interactive **graphs & charts** for expense tracking.
 
 ---
 
