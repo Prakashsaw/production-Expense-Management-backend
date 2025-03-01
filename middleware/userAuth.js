@@ -1,40 +1,49 @@
+const GoogleAuthUserModel = require("../models/model.user.googleAuth");
 const userModel = require("../models/userModel");
 const jwt = require("jsonwebtoken");
+
 const checkUserAuth = async (req, res, next) => {
-  let token;
   const { authorization } = req.headers;
-  // console.log(authorization);
+
+  if (!authorization || !authorization.startsWith("Bearer")) {
+    return res.status(401).send({
+      status: "failed",
+      message: "Unauthorized: No token provided, login again...!",
+    });
+  }
 
   try {
-    if (authorization && authorization.startsWith("Bearer")) {
-      // Get token from header
-      token = authorization.split(" ")[1];
-      // console.log("Token:", token);
+    // Extract token from header
+    const token = authorization.split(" ")[1];
 
-      // Verify Token
-      const { expenseAppUserId } = jwt.verify(
-        token,
-        process.env.JWT_SECRETE_KEY
-      );
+    // Verify token
+    const { expenseAppUserId } = jwt.verify(token, process.env.JWT_SECRETE_KEY);
 
-      // Get user from token
-      // Selecting all userDetailes except password so thats why we do "-password"
-      req.user = await userModel
-        .findOne({ expenseAppUserId : expenseAppUserId})
-        .select("-password");
-      next();
-    } else {
-      res
-        .status(401)
-        .send({
-          status: "failed",
-          message: "Unauthorized User, Login again...!",
-        });
+    // Find user in both collections using $or
+    const user =
+      (await userModel
+        .findOne({ expenseAppUserId })
+        .select("-password")
+        .lean()) ||
+      (await GoogleAuthUserModel.findOne({ expenseAppUserId })
+        .select("-googleId")
+        .lean());
+
+    if (!user) {
+      return res.status(401).send({
+        status: "failed",
+        message: "Unauthorized: User not found, login again...!",
+      });
     }
+
+    // Attach user object to request
+    req.user = user;
+    next();
   } catch (error) {
-    res.status(401).send({
+    console.error("Auth Middleware Error:", error);
+    return res.status(401).send({
       status: "failed",
-      message: "Unauthorized User, Login again...!",
+      message: "Unauthorized: Invalid or expired token, login again...!",
     });
   }
 };

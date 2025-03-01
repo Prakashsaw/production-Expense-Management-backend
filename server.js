@@ -3,9 +3,9 @@ const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const colors = require("colors");
-const path = require("path");
-const session = require("express-session");
-const passport = require("passport");
+// const session = require("express-session");
+const passport = require("./controllers/auth.googleAuth")
+const GoogleAuthRoutes = require("./routes/googleAuthRoutes");
 
 const connectDb = require("./config/connectDb");
 // config dot env file
@@ -22,20 +22,11 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(cors());
 
-// // setup session
-// app.use(
-//   session({
-//     secret: "MY SECRETE KEY",
-//     resave: false,
-//     saveUninitialized: true,
-//   })
-// );
-
-// // passport middleware
-// app.use(passport.initialize());
-// app.use(passport.session());
-
 //routes
+// Google Auth Routes
+app.use(passport.initialize());
+app.use("/auth", GoogleAuthRoutes);
+
 //user routes
 app.use("/api/v1/users", require("./routes/userRoute"));
 //transections routes
@@ -45,7 +36,7 @@ app.use("/api/v1/transections", require("./routes/transectionRoutes"));
 app.use("/api/v1/user-information", require("./routes/userInfoRoutes"));
 
 //port
-const PORT = 8080 || process.env.PORT;
+const PORT = 8000 || process.env.PORT;
 
 //it is a test route just to see our server is working
 app.get("/", (req, res) => {
@@ -57,7 +48,7 @@ app.get("/", (req, res) => {
             <li>Login User - /api/v1/users/login</li>
             <h3>Transection Route</h3>
             <li>Transaction Route - /api/v1/transections</li>
-            <li>Much more...</li>
+            <li>Many more...</li>
         </ul></div>
     </div>`);
 });
