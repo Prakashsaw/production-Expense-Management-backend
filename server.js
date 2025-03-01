@@ -21,6 +21,7 @@ const app = express();
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cors());
+app.set("trust proxy", 1);
 
 //routes
 // Google Auth Routes
