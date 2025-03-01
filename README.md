@@ -19,8 +19,11 @@ It provides features like user authentication, expense tracking, and data visual
 - **Password Security:** **Bcrypt** encryption for passwords and **JWT token-based authentication**.  
 - **Password Recovery:** Forgot password functionality with email-based reset link.  
 - **Expense Management:** Add, edit, delete, and categorize expenses with filtering options.  
+  - **Search Transactions:** Search for specific transactions quickly.  
+  - **Export to Excel:** Download filtered expenses with a date-based filename.  
 - **Financial Insights:** View expenses **weekly, monthly, yearly**, and through **custom date ranges**.  
-- **Data Analytics:** Expense visualization with **charts & graphs**.  
+- **Data Analytics:** Expense visualization with **charts & graphs**.
+
 
 ---
 
