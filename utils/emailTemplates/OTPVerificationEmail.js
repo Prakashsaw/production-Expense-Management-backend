@@ -31,6 +31,21 @@ const OTPVerificationEmail = (user, OTP, EMAIL_FROM) => {
                                         <p style="color: #4A4A4A; font-size: 14px;">Thanks & Regards,<br>
                                         Expense Management System and Team.</p>
 
+                                        <!-- Divider -->
+                                        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0; width: 80%;" />
+
+                                        <div style="margin-top: 30px;">
+                                            <a href="https://www.linkedin.com/in/prakash-saw-5b1215220/" style="margin: 0 10px; text-decoration: none;">
+                                                <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="24" height="24" />
+                                            </a>
+                                            <a href="https://github.com/Prakashsaw" style="margin: 0 10px; text-decoration: none;">
+                                                <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" alt="GitHub" width="24" height="24" />
+                                            </a>
+                                            <a href="https://prakashsawportfolio.netlify.app/" style="margin: 0 10px; text-decoration: none;">
+                                                <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Website" width="24" height="24" />
+                                            </a>
+                                        </div>
+
                                     </td>
                                 </tr>
                             </table>
