@@ -8,7 +8,7 @@ const resetPasswordEmail = (user, resetPasswordLink, EMAIL_FROM) => {
             </head>
             <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9;">
 
-                <table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f9f9f9">
+                <table width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f4f3f3">
                     <tr>
                         <td align="center" style="padding: 40px 0;">
                             <h1 style="color: #2A2A2A;">Expense Management System</h1>
