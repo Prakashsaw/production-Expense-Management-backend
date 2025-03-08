@@ -14,7 +14,7 @@ const emailVerificationEmail = (user, emailVerificationLink, EMAIL_FROM) => {
                         <h1 style="color: #2A2A2A;">Expense Management System</h1>
                           <table width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
                               <tr>
-                                  <td align="center" style="padding: 40px;">
+                                  <td align="left" style="padding: 40px;">
 
                                       <h2 style="color: #2A2A2A;">Action Required: Email Verification</h2>
 
@@ -26,16 +26,15 @@ const emailVerificationEmail = (user, emailVerificationLink, EMAIL_FROM) => {
 
                                       <a href="${emailVerificationLink}" style="background-color: #04AA6D; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; display: inline-block; margin: 20px 0;">Verify Email</a>
 
-                                      
                                       <p style="color: #4A4A4A; font-size: 14px;">If you need assistance, please contact us at <a href="mailto:${EMAIL_FROM}" style="color: #4CAF50; text-decoration: none;">email us</a>.</p>
 
                                       <p style="color: #4A4A4A; font-size: 14px;">Thanks & Regards,<br>
                                         Expense Management System and Team.</p>
 
                                         <!-- Divider -->
-                                        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0; width: 80%;" />
+                                        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0; width: 100%;" />
 
-                                        <div style="margin-top: 30px;">
+                                        <div style="margin-top: 30px; text-align: center;">
                                             <a href="https://www.linkedin.com/in/prakash-saw-5b1215220/" style="margin: 0 10px; text-decoration: none;">
                                                 <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="24" height="24" />
                                             </a>

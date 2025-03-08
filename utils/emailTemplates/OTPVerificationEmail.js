@@ -14,7 +14,7 @@ const OTPVerificationEmail = (user, OTP, EMAIL_FROM) => {
                             <h1 style="color: #2A2A2A;">Expense Management System</h1>
                             <table width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
                                 <tr>
-                                    <td align="center" style="padding: 40px;">
+                                    <td align="left" style="padding: 40px;">
 
                                         <h2 style="color: #2A2A2A;">Action Required: OTP Verification</h2>
 
@@ -32,9 +32,9 @@ const OTPVerificationEmail = (user, OTP, EMAIL_FROM) => {
                                         Expense Management System and Team.</p>
 
                                         <!-- Divider -->
-                                        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0; width: 80%;" />
+                                        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0; width: 100%;" />
 
-                                        <div style="margin-top: 30px;">
+                                        <div style="text-align: center; margin-top: 30px;">
                                             <a href="https://www.linkedin.com/in/prakash-saw-5b1215220/" style="margin: 0 10px; text-decoration: none;">
                                                 <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="24" height="24" />
                                             </a>

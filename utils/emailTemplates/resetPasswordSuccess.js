@@ -4,7 +4,7 @@ const resetPasswordSuccess = (user, EMAIL_FROM) => {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Password Reset Successfull - Expense Management System</title>
+                <title>Password Reset Successful - Expense Management System</title>
             </head>
             <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9;">
 
@@ -14,7 +14,7 @@ const resetPasswordSuccess = (user, EMAIL_FROM) => {
                             <h1 style="color: #2A2A2A;">Expense Management System</h1>
                             <table width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
                                 <tr>
-                                    <td align="center" style="padding: 40px;">
+                                    <td align="left" style="padding: 40px;">
 
                                         <h2 style="color: #2A2A2A;">User Password Reset Success</h2>
 
@@ -29,9 +29,9 @@ const resetPasswordSuccess = (user, EMAIL_FROM) => {
                                         Expense Management System and Team.</p>
 
                                         <!-- Divider -->
-                                        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0; width: 80%;" />
+                                        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0; width: 100%;" />
 
-                                        <div style="margin-top: 30px;">
+                                        <div style="margin-top: 30px; text-align: center;">
                                             <a href="https://www.linkedin.com/in/prakash-saw-5b1215220/" style="margin: 0 10px; text-decoration: none;">
                                                 <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="24" height="24" />
                                             </a>
