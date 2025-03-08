@@ -240,7 +240,7 @@ const sendEmailForOTPVerification = async (req, res) => {
     });
     // If user is already created then update the OTP in database
     if (userOTP) {
-      const updatedOTP = await UserOTPModel.findByIdAndUpdate(
+      const updatedOTP = await UserOTPModel.findOneAndUpdate(
         userOTP.expenseAppUserId,
         {
           $set: { otp: String(OTP) },
