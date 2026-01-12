@@ -62,6 +62,6 @@ app.listen(PORT, () => {
 
 // For backedn keep alive health check route
 app.get("/health", (req, res) => {
-  console.log("Health check hit at", new Date().toISOString());
+  console.log("HEALTH CHECK HIT at: ", new Date().toISOString());
   res.status(200).send("Backend server health check. Status: OK");
 });
