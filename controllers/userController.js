@@ -32,7 +32,7 @@ const registerController = async (req, res) => {
   const { name, email, phoneNumber, password } = req.body;
 
   try {
-    // Ckeck that any field not be empty
+    // Ckeck for any field should not be empty
     if (!name || !email || !password) {
       console.log("All fields are required!");
       return res.status(400).json({
@@ -102,7 +102,6 @@ const registerController = async (req, res) => {
       expenseAppUserId: newUser.expenseAppUserId,
       token: jwt_token,
     });
-    await userToken.save();
 
     const emailVerificationLink = `${CLIENT_URL}/email-verification/${newUser.expenseAppUserId}/${jwt_token}`;
     // Now Send Email
@@ -127,6 +126,9 @@ const registerController = async (req, res) => {
           "Something went wrong in sending email for email verification link...!",
       });
     }
+
+    // Once mail sent successfully then save the user in DB
+    await userToken.save();
 
     res.status(200).json({
       success: true,
@@ -198,6 +200,7 @@ const verifyEmail = async (req, res) => {
 
 // Send Email vefication for OTP verification: Login not required
 const sendEmailForOTPVerification = async (req, res) => {
+  console.log("req.body: ", req.body);
   const { email } = req.body;
   try {
     if (!email) {
