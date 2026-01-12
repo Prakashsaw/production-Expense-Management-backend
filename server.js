@@ -58,3 +58,9 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+// For backedn keep alive health check route
+app.get("/health", (req, res) => {
+  res.status(200).send("Backend server health check. Status: OK");
+});
