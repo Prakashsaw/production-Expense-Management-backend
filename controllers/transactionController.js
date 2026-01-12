@@ -117,7 +117,7 @@ const editTransaction = async (req, res) => {
         },
       }
     );
-    res.status(200).send({
+    return res.status(200).send({
       status: "success",
       message: "Transaction updated successfully.",
     });

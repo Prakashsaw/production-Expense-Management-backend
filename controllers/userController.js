@@ -92,7 +92,6 @@ const registerController = async (req, res) => {
       phoneNumber: phoneNumber,
       password: passwordHashingCode,
     });
-    await newUser.save();
 
     // For jwt token
     const jwt_token = createToken(newUser.expenseAppUserId);
@@ -127,10 +126,11 @@ const registerController = async (req, res) => {
       });
     }
 
-    // Once mail sent successfully then save the user in DB
+    // Once mail sent for email verification successfully then save the user details in DB and user token in DB
+    await newUser.save();
     await userToken.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       newUser: {
         expenseAppUserId: newUser.expenseAppUserId,
@@ -184,7 +184,7 @@ const verifyEmail = async (req, res) => {
       expenseAppUserId: user.expenseAppUserId,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "Email verified successfully",
       result,
@@ -200,7 +200,6 @@ const verifyEmail = async (req, res) => {
 
 // Send Email vefication for OTP verification: Login not required
 const sendEmailForOTPVerification = async (req, res) => {
-  console.log("req.body: ", req.body);
   const { email } = req.body;
   try {
     if (!email) {
@@ -258,7 +257,7 @@ const sendEmailForOTPVerification = async (req, res) => {
       await newUserOTP.save();
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "OTP sent successfully. Please Check Your Email...!",
       "Sent Email Info": info,
@@ -321,7 +320,7 @@ const verifyEmailThroughOTP = async (req, res) => {
       expenseAppUserId: userOTP.expenseAppUserId,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message:
         "Email verification through OTP has been verified successfully...!",
@@ -414,7 +413,7 @@ const loginControllerThroughEmail = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       user: {
         expenseAppUserId: user.expenseAppUserId,
@@ -495,7 +494,7 @@ const updateUserProfile = async (req, res) => {
       expenseAppUserId: req.user.expenseAppUserId,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "User profile updated successfully",
     });
@@ -574,7 +573,7 @@ const changePassword = async (req, res) => {
       html: changedPasswordSuccess(user, process.env.EMAIL_FROM),
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "User password changed successfully",
       result,
@@ -630,7 +629,7 @@ const sendUserPasswordResetEmail = async (req, res) => {
       ),
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "Password Reset Email Sent. Please Check Your Email...!",
       "Sent Email Info": info,
@@ -696,7 +695,7 @@ const resetUserPasswordThroughForgotPassword = async (req, res) => {
       html: resetPasswordSuccess(user, process.env.EMAIL_FROM),
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "User password reset successfully",
       result,
@@ -861,7 +860,7 @@ const verifyMobileNumberThroughOTP = async (req, res) => {
     user.isVerified = true;
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message:
         "Phone number verification through OTP has been verified successfully...!",

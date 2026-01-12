@@ -49,7 +49,7 @@ const contactUsMessageController = async (req, res) => {
       html: contactUsMessageSentSuccess(updatedUser, process.env.EMAIL_FROM),
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "Message sent successfully...!",
       user: updatedUser,
