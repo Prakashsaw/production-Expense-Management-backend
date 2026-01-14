@@ -235,21 +235,17 @@ const sendEmailForOTPVerification = async (req, res) => {
     const OTP = Math.floor(100000 + Math.random() * 900000);
 
     // Now send the OTP to user's email
-    const info = await transporter.sendMail({
-      from: {
-        name: "Expense Management System",
-        address: process.env.EMAIL_FROM,
-      },
-      to: user.email,
-      subject: "OTP for Email Verification",
-      html: OTPVerificationEmail(user, OTP, process.env.EMAIL_FROM),
-    });
-
-    if (!info) {
+    try {
+      await sendMailThroughBrevo({
+        to: user.email,
+        subject: "OTP for Email Verification",
+        html: OTPVerificationEmail(user, OTP, process.env.EMAIL_FROM) // Your HTML generator
+      });
+    } catch (error) {
+      console.error("OTP verification mail failed to send...! Error:", error);
       return res.status(400).json({
         status: "failed",
-        message:
-          "Something went wrong in sending OTP for email verification...!",
+        message: "OTP verification mail failed to send...!",
       });
     }
 
@@ -408,19 +404,19 @@ const loginControllerThroughEmail = async (req, res) => {
 
       const emailVerificationLink = `${CLIENT_URL}/email-verification/${user.expenseAppUserId}/${jwt_token}`;
       // Now Send Email
-      const info = await transporter.sendMail({
-        from: {
-          name: "Expense Management System",
-          address: process.env.EMAIL_FROM,
-        },
-        to: user.email,
-        subject: "Please verify your email address",
-        html: emailVerificationEmail(
-          user,
-          emailVerificationLink,
-          process.env.EMAIL_FROM
-        ),
-      });
+      try {
+        await sendMailThroughBrevo({
+          to: user.email,
+          subject: "Welcome! Please verify your email",
+          html: emailVerificationEmail(user, emailVerificationLink, process.env.EMAIL_FROM) // Your HTML generator
+        });
+      } catch (error) {
+        console.error("Email verifications mail failed to send...! Error:", error);
+        return res.status(400).json({
+          status: "failed",
+          message: "Email verifications mail failed to send...!",
+        });
+      }
 
       return res.status(400).json({
         status: "failed",
@@ -579,15 +575,19 @@ const changePassword = async (req, res) => {
     );
 
     // Send the mail to user that his password has been changed successfully.
-    const info = await transporter.sendMail({
-      from: {
-        name: "Expense Management System",
-        address: process.env.EMAIL_FROM,
-      },
-      to: user.email,
-      subject: "Your password has been changed successfully.",
-      html: changedPasswordSuccess(user, process.env.EMAIL_FROM),
-    });
+    try {
+      await sendMailThroughBrevo({
+        to: user.email,
+        subject: "Congratulation! Your password has been changed successfully",
+        html: changedPasswordSuccess(user, process.env.EMAIL_FROM) // Your HTML generator
+      });
+    } catch (error) {
+      console.error("Password changed success mail failed to send...! Error:", error);
+      return res.status(400).json({
+        status: "failed",
+        message: "Password changed success mail failed to send...!",
+      });
+    }
 
     return res.status(200).json({
       status: "success",
@@ -631,19 +631,19 @@ const sendUserPasswordResetEmail = async (req, res) => {
     const reset_password_link = `${CLIENT_URL}/reset-password/${user.expenseAppUserId}/${token}`;
 
     // Now Send Email
-    const info = await transporter.sendMail({
-      from: {
-        name: "Expense Management System",
-        address: process.env.EMAIL_FROM,
-      },
-      to: user.email,
-      subject: "Reset your Expense Management System account password",
-      html: resetPasswordEmail(
-        user,
-        reset_password_link,
-        process.env.EMAIL_FROM
-      ),
-    });
+    try {
+      await sendMailThroughBrevo({
+        to: user.email,
+        subject: "Reset your Expense Management System account password",
+        html: resetPasswordEmail(user,reset_password_link, process.env.EMAIL_FROM) // Your HTML generator
+      });
+    } catch (error) {
+      console.error("Password reset mail failed to send...! Error:", error);
+      return res.status(400).json({
+        status: "failed",
+        message: "Password reset mail failed to send...!",
+      });
+    }
 
     return res.status(200).json({
       status: "success",
@@ -701,16 +701,21 @@ const resetUserPasswordThroughForgotPassword = async (req, res) => {
       }
     );
 
-    const info = await transporter.sendMail({
-      from: {
-        name: "Expense Management System",
-        address: process.env.EMAIL_FROM,
-      },
-      to: user.email,
-      subject: "Your password has been reset successfully.",
-      html: resetPasswordSuccess(user, process.env.EMAIL_FROM),
-    });
-
+    // Send the mail to user that his password has been reset successfully.
+    try {
+      await sendMailThroughBrevo({
+        to: user.email,
+        subject: "Congratulations! Your password has been reset successfully",
+        html: resetPasswordSuccess(user, process.env.EMAIL_FROM) // Your HTML generator
+      });
+    } catch (error) {
+      console.error("Password reset success mail failed to send...! Error:", error);
+      return res.status(400).json({
+        status: "failed",
+        message: "Password reset success mail failed to send...!",
+      });
+    }
+    
     return res.status(200).json({
       status: "success",
       message: "User password reset successfully",
