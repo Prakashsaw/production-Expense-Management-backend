@@ -1,0 +1,43 @@
+const SibApiV3Sdk = require('@getbrevo/brevo');
+
+/**
+ * Global Mailer Wrapper for Brevo API
+ * @param {Object} options - { to, subject, html }
+ */
+const sendMailThroughBrevo = async ({ to, subject, html }) => {
+  // 1. Instantiate the API class directly
+  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
+  // 2. Set the API key using the 'setApiKey' method
+  // Note: TransactionalEmailsApiApiKeys.apiKey is the standard way to reference the key type
+  apiInstance.setApiKey(
+    SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey,
+    process.env.BREVO_COMMON_API_KEY
+  );
+
+  // 3. Create the email object
+  let sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+  sendSmtpEmail.subject = subject;
+  sendSmtpEmail.to = [{ email: to }];
+  sendSmtpEmail.htmlContent = html;
+
+  // Use the verified sender Gmail address from your .env
+  sendSmtpEmail.sender = { 
+    name: "Expense Management System", 
+    email: process.env.EMAIL_FROM 
+  };
+
+  try {
+    // 4. Send the email
+    const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log('Email sent successfully via Brevo API. ID:', data.messageId);
+    return data;
+  } catch (error) {
+    // Brevo API errors are often returned in error.response.body
+    console.error('Brevo API Error:', error.response ? error.response.body : error.message);
+    throw error;
+  }
+};
+
+module.exports = sendMailThroughBrevo;

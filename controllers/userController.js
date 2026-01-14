@@ -16,6 +16,7 @@ const UserPhoneNumberModel = require("../models/userPhoneNumberModel");
 
 const { customAlphabet } = require("nanoid");
 const GoogleAuthUserModel = require("../models/model.user.googleAuth");
+const sendMailThroughBrevo = require("../services/brevoEmailService");
 const alphabet =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
@@ -104,19 +105,12 @@ const registerController = async (req, res) => {
 
     const emailVerificationLink = `${CLIENT_URL}/email-verification/${newUser.expenseAppUserId}/${jwt_token}`;
     // Now Send Email
+
     try {
-      await transporter.sendMail({
-        from: {
-          name: "Expense Management System",
-          address: process.env.EMAIL_FROM,
-        },
+      await sendMailThroughBrevo({
         to: newUser.email,
-        subject: "Please verify your email address",
-        html: emailVerificationEmail(
-          newUser,
-          emailVerificationLink,
-          process.env.EMAIL_FROM
-        ),
+        subject: "Welcome! Please verify your email",
+        html: emailVerificationEmail(newUser, emailVerificationLink, process.env.EMAIL_FROM) // Your HTML generator
       });
     } catch (error) {
       console.error("Email verifications mail failed to send...! Error:", error);
@@ -125,6 +119,28 @@ const registerController = async (req, res) => {
         message: "Email verifications mail failed to send...!",
       });
     }
+
+    // try {
+    //   await transporter.sendMail({
+    //     from: {
+    //       name: "Expense Management System",
+    //       address: process.env.EMAIL_FROM,
+    //     },
+    //     to: newUser.email,
+    //     subject: "Please verify your email address",
+    //     html: emailVerificationEmail(
+    //       newUser,
+    //       emailVerificationLink,
+    //       process.env.EMAIL_FROM
+    //     ),
+    //   });
+    // } catch (error) {
+    //   console.error("Email verifications mail failed to send...! Error:", error);
+    //   return res.status(400).json({
+    //     status: "failed",
+    //     message: "Email verifications mail failed to send...!",
+    //   });
+    // }
 
     // Once mail sent for email verification successfully then save the user details in DB and user token in DB
     await newUser.save();
