@@ -94,6 +94,8 @@ const registerController = async (req, res) => {
       password: passwordHashingCode,
     });
 
+    await newUser.save();
+
     // For jwt token
     const jwt_token = createToken(newUser.expenseAppUserId);
 
@@ -102,6 +104,8 @@ const registerController = async (req, res) => {
       expenseAppUserId: newUser.expenseAppUserId,
       token: jwt_token,
     });
+
+    await userToken.save();
 
     const emailVerificationLink = `${CLIENT_URL}/email-verification/${newUser.expenseAppUserId}/${jwt_token}`;
     // Now Send Email
@@ -141,11 +145,7 @@ const registerController = async (req, res) => {
     //     message: "Email verifications mail failed to send...!",
     //   });
     // }
-
-    // Once mail sent for email verification successfully then save the user details in DB and user token in DB
-    await newUser.save();
-    await userToken.save();
-
+    
     return res.status(200).json({
       success: true,
       newUser: {
