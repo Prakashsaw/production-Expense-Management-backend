@@ -119,10 +119,10 @@ const registerController = async (req, res) => {
         ),
       });
     } catch (error) {
-      console.error("Email verifications mail failed to send, but user was registered:", error);
+      console.error("Email verifications mail failed to send...! Error:", error);
       return res.status(400).json({
         status: "failed",
-        message: "Unable to send email verification link to mail...!",
+        message: "Email verifications mail failed to send...!",
       });
     }
 
