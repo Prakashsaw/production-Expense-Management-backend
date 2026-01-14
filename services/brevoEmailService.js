@@ -31,8 +31,10 @@ const sendMailThroughBrevo = async ({ to, subject, html }) => {
   try {
     // 4. Send the email
     const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log('Email sent successfully via Brevo API. ID:', data.messageId);
-    return data;
+    // The SDK returns the response inside the 'body' property
+    console.log('Email sent successfully. ID:', data.body.messageId); 
+    
+    return data.body; // Return the body so controllers have access to the ID
   } catch (error) {
     // Brevo API errors are often returned in error.response.body
     console.error('Brevo API Error:', error.response ? error.response.body : error.message);
