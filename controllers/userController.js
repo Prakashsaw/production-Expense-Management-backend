@@ -111,7 +111,7 @@ const registerController = async (req, res) => {
     // Now Send Email
 
     try {
-      await sendMailThroughBrevo({
+      info = await sendMailThroughBrevo({
         to: newUser.email,
         subject: "Welcome! Please verify your email",
         html: emailVerificationEmail(newUser, emailVerificationLink, process.env.EMAIL_FROM) // Your HTML generator
@@ -236,7 +236,7 @@ const sendEmailForOTPVerification = async (req, res) => {
 
     // Now send the OTP to user's email
     try {
-      await sendMailThroughBrevo({
+      info = await sendMailThroughBrevo({
         to: user.email,
         subject: "OTP for Email Verification",
         html: OTPVerificationEmail(user, OTP, process.env.EMAIL_FROM) // Your HTML generator
@@ -272,7 +272,6 @@ const sendEmailForOTPVerification = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "OTP sent successfully. Please Check Your Email...!",
-      "Sent Email Info": info,
       email: user.email,
       expenseAppUserId: user.expenseAppUserId,
     });
@@ -405,7 +404,7 @@ const loginControllerThroughEmail = async (req, res) => {
       const emailVerificationLink = `${CLIENT_URL}/email-verification/${user.expenseAppUserId}/${jwt_token}`;
       // Now Send Email
       try {
-        await sendMailThroughBrevo({
+        info = await sendMailThroughBrevo({
           to: user.email,
           subject: "Welcome! Please verify your email",
           html: emailVerificationEmail(user, emailVerificationLink, process.env.EMAIL_FROM) // Your HTML generator
@@ -576,7 +575,7 @@ const changePassword = async (req, res) => {
 
     // Send the mail to user that his password has been changed successfully.
     try {
-      await sendMailThroughBrevo({
+      info = await sendMailThroughBrevo({
         to: user.email,
         subject: "Congratulation! Your password has been changed successfully",
         html: changedPasswordSuccess(user, process.env.EMAIL_FROM) // Your HTML generator
@@ -632,7 +631,7 @@ const sendUserPasswordResetEmail = async (req, res) => {
 
     // Now Send Email
     try {
-      await sendMailThroughBrevo({
+      info = await sendMailThroughBrevo({
         to: user.email,
         subject: "Reset your Expense Management System account password",
         html: resetPasswordEmail(user,reset_password_link, process.env.EMAIL_FROM) // Your HTML generator
@@ -648,7 +647,6 @@ const sendUserPasswordResetEmail = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Password Reset Email Sent. Please Check Your Email...!",
-      "Sent Email Info": info,
     });
   } catch (error) {
     console.log(error);
@@ -703,7 +701,7 @@ const resetUserPasswordThroughForgotPassword = async (req, res) => {
 
     // Send the mail to user that his password has been reset successfully.
     try {
-      await sendMailThroughBrevo({
+      info = await sendMailThroughBrevo({
         to: user.email,
         subject: "Congratulations! Your password has been reset successfully",
         html: resetPasswordSuccess(user, process.env.EMAIL_FROM) // Your HTML generator
