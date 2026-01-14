@@ -105,7 +105,7 @@ const registerController = async (req, res) => {
     const emailVerificationLink = `${CLIENT_URL}/email-verification/${newUser.expenseAppUserId}/${jwt_token}`;
     // Now Send Email
     try {
-      transporter.sendMail({
+      await transporter.sendMail({
         from: {
           name: "Expense Management System",
           address: process.env.EMAIL_FROM,
@@ -121,9 +121,9 @@ const registerController = async (req, res) => {
     } catch (error) {
       console.error("Email verifications mail failed to send, but user was registered:", error);
       return res.status(400).json({
-      status: "failed",
-      message: "Unable to send email verification link to mail...!",
-    });
+        status: "failed",
+        message: "Unable to send email verification link to mail...!",
+      });
     }
 
     // Once mail sent for email verification successfully then save the user details in DB and user token in DB
