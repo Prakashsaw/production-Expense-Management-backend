@@ -41,6 +41,22 @@ const registerController = async (req, res) => {
       });
     }
 
+    // Validate the email that email entered is in correct email format
+    if (!validator.isEmail(email)) {
+      return res
+        .status(400)
+        .json({ Status: "failed", message: "Email must be a valid email..." });
+    }
+
+    // For strong password
+    if (!validator.isStrongPassword(password)) {
+      return res.status(400).json({
+        Status: "failed",
+        message:
+          "Password must be a strong password which includes capital letters, small letters and numbers...!",
+      });
+    }
+
     // Check that that user with this email already exist or not
     const user = await userModel.findOne({ email: email });
     if (user) {
@@ -56,22 +72,6 @@ const registerController = async (req, res) => {
       return res.status(400).json({
         status: "failed",
         message: "User already exists with this email with SignIn with Google!",
-      });
-    }
-
-    // Validate the email that email entered is in correct email format
-    if (!validator.isEmail(email)) {
-      return res
-        .status(400)
-        .json({ Status: "failed", message: "Email must be a valid email..." });
-    }
-
-    // For strong password
-    if (!validator.isStrongPassword(password)) {
-      return res.status(400).json({
-        Status: "failed",
-        message:
-          "Password must be a strong password which includes capital letters, small letters and numbers...!",
       });
     }
 
@@ -104,26 +104,26 @@ const registerController = async (req, res) => {
 
     const emailVerificationLink = `${CLIENT_URL}/email-verification/${newUser.expenseAppUserId}/${jwt_token}`;
     // Now Send Email
-    const info = await transporter.sendMail({
-      from: {
-        name: "Expense Management System",
-        address: process.env.EMAIL_FROM,
-      },
-      to: newUser.email,
-      subject: "Please verify your email address",
-      html: emailVerificationEmail(
-        newUser,
-        emailVerificationLink,
-        process.env.EMAIL_FROM
-      ),
-    });
-
-    if (!info) {
-      return res.status(400).json({
-        status: "failed",
-        message:
-          "Something went wrong in sending email for email verification link...!",
+    try {
+      transporter.sendMail({
+        from: {
+          name: "Expense Management System",
+          address: process.env.EMAIL_FROM,
+        },
+        to: newUser.email,
+        subject: "Please verify your email address",
+        html: emailVerificationEmail(
+          newUser,
+          emailVerificationLink,
+          process.env.EMAIL_FROM
+        ),
       });
+    } catch (error) {
+      console.error("Email verifications mail failed to send, but user was registered:", error);
+      return res.status(400).json({
+      status: "failed",
+      message: "Unable to send email verification link to mail...!",
+    });
     }
 
     // Once mail sent for email verification successfully then save the user details in DB and user token in DB
