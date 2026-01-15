@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "Not Provided",
     },
+    gender: {
+      type: String, // Male or Female
+      default: "Not Provided",
+    },
   },
   { timestamps: true }
 );

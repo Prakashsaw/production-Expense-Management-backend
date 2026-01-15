@@ -446,21 +446,28 @@ const loginControllerThroughEmail = async (req, res) => {
 
 // Controller for fetching details of Logged User: Login required
 const loggedUser = async (req, res) => {
+  const user = req.user;
+
   res.send({
     user: {
-      name: req.user.name,
-      email: req.user.email,
-      phoneNumber: req.user.phoneNumber,
-      address: req.user.address,
-      birthDate: req.user.birthDate,
-      favouriteSport: req.user.favouriteSport,
+      name: user.name,
+      email: user.email,
+
+      phoneNumber: user.phoneNumber ?? "Not Provided",
+      address: user.address ?? "Not Provided",
+      favouriteSport: user.favouriteSport ?? "Not Provided",
+
+      birthDate: user.birthDate ?? "",
+
+      gender: user.gender ?? "Prefer not to say",
     },
   });
 };
 
+
 // Controller for user profile update: Login required
 const updateUserProfile = async (req, res) => {
-  const { name, email, phoneNumber, address, birthDate, favouriteSport } =
+  const { name, email, phoneNumber, address, birthDate, favouriteSport, gender } =
     req.body;
 
   console.log("Req body: ", req.body);
@@ -471,7 +478,8 @@ const updateUserProfile = async (req, res) => {
       !phoneNumber ||
       !address ||
       !birthDate ||
-      !favouriteSport
+      !favouriteSport ||
+      !gender
     ) {
       return res
         .status(400)
@@ -497,6 +505,7 @@ const updateUserProfile = async (req, res) => {
           address: address,
           birthDate: String(birthDate),
           favouriteSport: favouriteSport,
+          gender: gender,
         },
       }
     );
