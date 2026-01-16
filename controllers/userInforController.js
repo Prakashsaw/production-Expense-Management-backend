@@ -1,5 +1,5 @@
-const transporter = require("../config/emailConfig");
 const ContactUsMessageModel = require("../models/contactUsMessageModel");
+const sendMailThroughBrevo = require("../services/brevoEmailService");
 const contactUsMessageSentSuccess = require("../utils/emailTemplates/contactUsMessageSent");
 const { customAlphabet } = require("nanoid");
 const alphabet =
