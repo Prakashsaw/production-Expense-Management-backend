@@ -67,12 +67,13 @@ const registerController = async (req, res) => {
       });
     }
 
-    // Check for user has already signed up or signed in with google then user can't sign up with email, already exist
+    // Check if user has already signed up with Google using the same email
+    // Note: Email/password users and Google users are separate, but we prevent duplicate emails
     const googleUser = await GoogleAuthUserModel.findOne({ email: email });
     if (googleUser) {
       return res.status(400).json({
         status: "failed",
-        message: "User already exists with this email with SignIn with Google!",
+        message: "This email is already registered with Google Sign-In. Please use Google Sign-In to login.",
       });
     }
 
@@ -148,6 +149,7 @@ const registerController = async (req, res) => {
     
     return res.status(200).json({
       success: true,
+      registeredWith: "EMAIL", // Flag to identify email/password users
       newUser: {
         expenseAppUserId: newUser.expenseAppUserId,
         name: newUser.name,
@@ -426,6 +428,7 @@ const loginControllerThroughEmail = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      registeredWith: "EMAIL", // Flag to identify email/password users
       user: {
         expenseAppUserId: user.expenseAppUserId,
         name: user.name,
@@ -486,33 +489,52 @@ const updateUserProfile = async (req, res) => {
         .json({ status: "failed", message: "All fields are required...!" });
     }
 
-    // BTW No need of this validation because user is already logged in
-    const user = await userModel.findOne({ email: email });
-    if (!user || !req.user) {
+    // Check if user exists in regular userModel or GoogleAuthUserModel
+    const user = await userModel.findOne({ expenseAppUserId: req.user.expenseAppUserId });
+    const googleUser = await GoogleAuthUserModel.findOne({ expenseAppUserId: req.user.expenseAppUserId });
+
+    if (!user && !googleUser) {
       return res.status(400).json({
         status: "failed",
         message: "User doesn't exist or Unauthorize user...!",
       });
     }
 
-    await userModel.findOneAndUpdate(
-      { expenseAppUserId: req.user.expenseAppUserId },
-      {
-        $set: {
-          name: name,
-          email: email,
-          phoneNumber: String(phoneNumber),
-          address: address,
-          birthDate: String(birthDate),
-          favouriteSport: favouriteSport,
-          gender: gender,
-        },
-      }
-    );
+    // Update regular user if exists
+    if (user) {
+      await userModel.findOneAndUpdate(
+        { expenseAppUserId: req.user.expenseAppUserId },
+        {
+          $set: {
+            name: name,
+            email: email,
+            phoneNumber: String(phoneNumber),
+            address: address,
+            birthDate: String(birthDate),
+            favouriteSport: favouriteSport,
+            gender: gender,
+          },
+        }
+      );
+    }
 
-    const updateUser = await userModel.findOne({
-      expenseAppUserId: req.user.expenseAppUserId,
-    });
+    // Update Google auth user if exists
+    if (googleUser) {
+      await GoogleAuthUserModel.findOneAndUpdate(
+        { expenseAppUserId: req.user.expenseAppUserId },
+        {
+          $set: {
+            name: name,
+            email: email,
+            phoneNumber: String(phoneNumber),
+            address: address,
+            birthDate: String(birthDate),
+            favouriteSport: favouriteSport,
+            gender: gender,
+          },
+        }
+      );
+    }
 
     return res.status(200).json({
       status: "success",
@@ -546,10 +568,30 @@ const changePassword = async (req, res) => {
         message: "Unauthorize user...!",
       });
     }
-    // Validate user password first
+
+    // Check if user is a Google auth user - they cannot change password
+    const googleUser = await GoogleAuthUserModel.findOne({
+      expenseAppUserId: req.user.expenseAppUserId,
+    });
+    if (googleUser) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Password change is not available for Google Sign-In users. Please use Google to manage your account.",
+      });
+    }
+
+    // Validate user password first - only for email/password users
     const user = await userModel.findOne({
       expenseAppUserId: req.user.expenseAppUserId,
     });
+    
+    if (!user) {
+      return res.status(400).json({
+        status: "failed",
+        message: "User not found...!",
+      });
+    }
+
     const validatePassword = await bcrypt.compare(oldPassword, user.password);
     if (!validatePassword) {
       return res.status(400).json({
@@ -619,6 +661,15 @@ const sendUserPasswordResetEmail = async (req, res) => {
       return res
         .status(400)
         .json({ status: "failed", message: "Email field required...!" });
+    }
+
+    // Check if user is a Google auth user - they cannot reset password
+    const googleUser = await GoogleAuthUserModel.findOne({ email: email });
+    if (googleUser) {
+      return res.status(400).json({
+        status: "failed",
+        message: "This email is registered with Google Sign-In. Password reset is not available. Please use Google Sign-In to access your account.",
+      });
     }
 
     const user = await userModel.findOne({ email: email });

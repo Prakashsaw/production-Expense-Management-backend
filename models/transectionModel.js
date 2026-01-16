@@ -5,7 +5,6 @@ const transectionSchema = new mongoose.Schema(
     expenseAppUserId: {
       type: String,
       required: true,
-      ref: "users",
     },
     transactionId: {
       type: String,

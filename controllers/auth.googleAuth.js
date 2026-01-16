@@ -27,29 +27,17 @@ passport.use(
         // Check if the user exists in GoogleAuthUserModel by Google ID
         let user = await GoogleAuthUserModel.findOne({ googleId: profile.id });
 
-        // If user does not exist in GoogleAuthUserModel, check if they exist in main userModel
+        // If user does not exist, create a new Google auth user with separate expenseAppUserId
+        // No linking with email/password users - they are completely separate
         if (!user) {
-          const existingUser = await userModel.findOne({ email });
-
-          if (existingUser) {
-            // If found in userModel, create GoogleAuthUserModel entry linked by expenseAppUserId
-            user = await GoogleAuthUserModel.create({
-              expenseAppUserId: existingUser.expenseAppUserId,
-              googleId: profile.id,
-              name: existingUser.name || profile.displayName,
-              email,
-              isVerified: true,
-            });
-          } else {
-            // If new user, create both a new expenseAppUserId and GoogleAuthUserModel record
-            user = await GoogleAuthUserModel.create({
-              expenseAppUserId: nanoid(),
-              googleId: profile.id,
-              name: profile.displayName,
-              email,
-              isVerified: true,
-            });
-          }
+          // Create a new Google auth user with unique expenseAppUserId
+          user = await GoogleAuthUserModel.create({
+            expenseAppUserId: nanoid(),
+            googleId: profile.id,
+            name: profile.displayName,
+            email,
+            isVerified: true,
+          });
         }
 
         // Generate JWT token

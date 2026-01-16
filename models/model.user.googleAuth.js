@@ -7,7 +7,6 @@ const googleAuthUserSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      ref: "users",
     },
     googleId: {
       type: String,
@@ -24,6 +23,26 @@ const googleAuthUserSchema = new mongoose.Schema(
     isVerified: {
       type: Boolean,
       default: false,
+    },
+    phoneNumber: {
+      type: String,
+      default: "Not Provided",
+    },
+    address: {
+      type: String,
+      default: "Not Provided",
+    },
+    birthDate: {
+      type: String,
+      default: "Not Provided",
+    },
+    favouriteSport: {
+      type: String,
+      default: "Not Provided",
+    },
+    gender: {
+      type: String,
+      default: "Prefer not to say",
     },
   },
   { timestamps: true }

@@ -46,7 +46,16 @@ const getOneTransaction = async (req, res) => {
   try {
     const transaction = await transectionModel.findOne({
       transactionId: transactionId,
+      expenseAppUserId: req.user.expenseAppUserId, // Ensure user can only access their own transactions
     });
+    
+    if (!transaction) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Transaction not found or you don't have access to this transaction.",
+      });
+    }
+    
     res
       .status(200)
       .json({
@@ -102,12 +111,26 @@ const editTransaction = async (req, res) => {
   const { amount, type, category, refrence, description, date } = req.body;
   const { transactionId } = req.params;
   try {
+    // Verify transaction belongs to the user before updating
+    const transaction = await transectionModel.findOne({
+      transactionId: transactionId,
+      expenseAppUserId: req.user.expenseAppUserId,
+    });
+    
+    if (!transaction) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Transaction not found or you don't have access to this transaction.",
+      });
+    }
+    
     await transectionModel.findOneAndUpdate(
-      { transactionId: transactionId},
-      // req.body.payload
+      { 
+        transactionId: transactionId,
+        expenseAppUserId: req.user.expenseAppUserId, // Ensure user can only update their own transactions
+      },
       {
         $set: {
-          expenseAppUserId: req.user.expenseAppUserId,
           amount: amount,
           type: type,
           category: category,
@@ -133,7 +156,23 @@ const editTransaction = async (req, res) => {
 const deleteTransaction = async (req, res) => {
   const { transactionId } = req.params;
   try {
-    await transectionModel.findOneAndDelete({ transactionId: transactionId});
+    // Verify transaction belongs to the user before deleting
+    const transaction = await transectionModel.findOne({
+      transactionId: transactionId,
+      expenseAppUserId: req.user.expenseAppUserId,
+    });
+    
+    if (!transaction) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Transaction not found or you don't have access to this transaction.",
+      });
+    }
+    
+    await transectionModel.findOneAndDelete({ 
+      transactionId: transactionId,
+      expenseAppUserId: req.user.expenseAppUserId, // Ensure user can only delete their own transactions
+    });
     res
       .status(200)
       .send({

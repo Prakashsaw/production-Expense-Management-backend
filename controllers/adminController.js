@@ -1,5 +1,6 @@
 const adminModel = require("../models/adminModel");
 const userModel = require("../models/userModel");
+const GoogleAuthUserModel = require("../models/model.user.googleAuth");
 const transectionModel = require("../models/transectionModel");
 const validator = require("validator");
 const { customAlphabet } = require("nanoid");
@@ -266,8 +267,9 @@ const getDashboardData = async (req, res) => {
       });
     }
 
-    // Get all users
-    const users = await userModel.find({}).sort({ createdAt: -1 });
+    // Get all users from both email registration and Google auth
+    const emailUsers = await userModel.find({}).sort({ createdAt: -1 });
+    const googleUsers = await GoogleAuthUserModel.find({}).sort({ createdAt: -1 });
 
     // Get all transactions
     const transactions = await transectionModel.find({});
@@ -291,8 +293,8 @@ const getDashboardData = async (req, res) => {
       userTransactionMap[userId].totalTurnover += transaction.amount;
     });
 
-    // Format users with transaction data
-    const usersWithData = users.map((user) => {
+    // Format email users with transaction data
+    const emailUsersWithData = emailUsers.map((user) => {
       const transactionData = userTransactionMap[user.expenseAppUserId] || {
         totalIncome: 0,
         totalExpense: 0,
@@ -308,6 +310,7 @@ const getDashboardData = async (req, res) => {
         totalTurnover: transactionData.totalTurnover,
         totalIncome: transactionData.totalIncome,
         totalExpense: transactionData.totalExpense,
+        registeredWith: "EMAIL",
         // Additional user details
         name: user.name,
         address: user.address !== "Not Provided" ? user.address : null,
@@ -315,6 +318,37 @@ const getDashboardData = async (req, res) => {
         gender: user.gender !== "Not Provided" ? user.gender : null,
       };
     });
+
+    // Format Google users with transaction data
+    const googleUsersWithData = googleUsers.map((user) => {
+      const transactionData = userTransactionMap[user.expenseAppUserId] || {
+        totalIncome: 0,
+        totalExpense: 0,
+        totalTurnover: 0,
+      };
+
+      return {
+        userId: user.expenseAppUserId,
+        email: user.email,
+        phone: user.phoneNumber !== "Not Provided" ? user.phoneNumber : null,
+        isVerified: user.isVerified,
+        createdDate: user.createdAt,
+        totalTurnover: transactionData.totalTurnover,
+        totalIncome: transactionData.totalIncome,
+        totalExpense: transactionData.totalExpense,
+        registeredWith: "GOOGLE",
+        // Additional user details
+        name: user.name,
+        address: user.address !== "Not Provided" ? user.address : null,
+        favoriteSport: user.favouriteSport !== "Not Provided" ? user.favouriteSport : null,
+        gender: user.gender !== "Not Provided" ? user.gender : null,
+      };
+    });
+
+    // Combine both user types and sort by created date
+    const usersWithData = [...emailUsersWithData, ...googleUsersWithData].sort(
+      (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
+    );
 
     // Calculate summary statistics
     const totalUsers = usersWithData.length;
