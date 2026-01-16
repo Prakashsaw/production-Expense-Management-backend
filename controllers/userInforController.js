@@ -39,15 +39,19 @@ const contactUsMessageController = async (req, res) => {
     });
 
     // send an email for confirmation
-    const info = await transporter.sendMail({
-      from: {
-        name: "Expense Management System",
-        address: process.env.EMAIL_FROM,
-      },
-      to: updatedUser.email,
-      subject: "Your contact us message sent successfully.",
-      html: contactUsMessageSentSuccess(updatedUser, process.env.EMAIL_FROM),
-    });
+    try {
+      info = await sendMailThroughBrevo({
+        to: updatedUser.email,
+        subject: "Your contact us message sent successfully.",
+        html: contactUsMessageSentSuccess(updatedUser, process.env.EMAIL_FROM) // Your HTML generator
+      });
+    } catch (error) {
+      console.error("Your contact us message mail failed to send...! Error:", error);
+      return res.status(400).json({
+        status: "failed",
+        message: "Your contact us message mail failed to send...!",
+      });
+    }
 
     return res.status(200).json({
       status: "success",
