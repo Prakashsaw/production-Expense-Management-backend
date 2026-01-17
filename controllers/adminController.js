@@ -285,9 +285,9 @@ const getDashboardData = async (req, res) => {
           totalTurnover: 0,
         };
       }
-      if (transaction.type === "income") {
+      if (transaction.type === "Income" || transaction.type === "income") {
         userTransactionMap[userId].totalIncome += transaction.amount;
-      } else if (transaction.type === "expense") {
+      } else if (transaction.type === "Expense" || transaction.type === "expense") {
         userTransactionMap[userId].totalExpense += transaction.amount;
       }
       userTransactionMap[userId].totalTurnover += transaction.amount;
