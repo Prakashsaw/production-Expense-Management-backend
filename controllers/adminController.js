@@ -2,11 +2,13 @@ const adminModel = require("../models/adminModel");
 const userModel = require("../models/userModel");
 const GoogleAuthUserModel = require("../models/model.user.googleAuth");
 const transectionModel = require("../models/transectionModel");
+const AdminPhoneNumberModel = require("../models/adminPhoneNumberModel");
 const validator = require("validator");
 const { customAlphabet } = require("nanoid");
 const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const adminKeyEmail = require("../utils/emailTemplates/adminKeyEmail");
 const sendMailThroughBrevo = require("../services/brevoEmailService");
+const axios = require("axios");
 
 // Request Admin Access
 const requestAdminAccess = async (req, res) => {
@@ -70,15 +72,17 @@ const requestAdminAccess = async (req, res) => {
     // Check if email is in the allowed list
     const isEmailAllowed = allowedEmails.includes(emailLower);
 
-    if (isEmailAllowed) {
+      if (isEmailAllowed) {
       // Email is in allowed list - Generate admin key and approve
+      // Generate 16-character uppercase alphanumeric admin key
+      const uppercaseAlphanumeric = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       let adminKey;
       let isKeyUnique = false;
       let keyAttempts = 0;
       const maxKeyAttempts = 10;
 
       while (!isKeyUnique && keyAttempts < maxKeyAttempts) {
-        const nanoid = customAlphabet(alphabet, 10);
+        const nanoid = customAlphabet(uppercaseAlphanumeric, 16);
         adminKey = nanoid();
         const existingKey = await adminModel.findOne({ adminKey });
         if (!existingKey) {
@@ -186,11 +190,11 @@ const adminLogin = async (req, res) => {
       });
     }
 
-    // Validate admin key format (10 alphanumeric characters)
-    if (!/^[A-Za-z0-9]{10}$/.test(adminKey)) {
+    // Validate admin key format (16 uppercase alphanumeric characters)
+    if (!/^[A-Z0-9]{16}$/.test(adminKey)) {
       return res.status(400).json({
         status: "failed",
-        message: "Admin key must be exactly 10 alphanumeric characters!",
+        message: "Admin key must be exactly 16 uppercase alphanumeric characters!",
       });
     }
 
@@ -410,6 +414,7 @@ const getAdminProfile = async (req, res) => {
         email: admin.email,
         name: admin.name,
         phone: admin.phone,
+        isPhoneVerified: admin.isPhoneVerified || false,
         isRequestApproved: admin.isRequestApproved,
         isActive: admin.isActive,
         createdAt: admin.createdAt,
@@ -493,6 +498,203 @@ const updateAdminPhone = async (req, res) => {
   }
 };
 
+// Send OTP for Admin Phone Verification
+const sendOTPForAdminPhoneVerification = async (req, res) => {
+  try {
+    const { adminId, phoneNumber } = req.body;
+
+    // Validate admin ID
+    if (!adminId) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Admin ID is required!",
+      });
+    }
+
+    // Validate phone number
+    if (!phoneNumber) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Phone number field required...!",
+      });
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+    if (!phoneRegex.test(phoneNumber.trim())) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Please provide a valid phone number format!",
+      });
+    }
+
+    // Verify admin exists and is active
+    const admin = await adminModel.findOne({
+      adminId: adminId,
+      isActive: true,
+    });
+
+    if (!admin) {
+      return res.status(401).json({
+        status: "failed",
+        message: "Invalid or inactive admin ID!",
+      });
+    }
+
+    // Generate OTP: 6 digit random number
+    const OTP = Math.floor(100000 + Math.random() * 900000);
+
+    // Send OTP via SMS
+    const messageData = {
+      sender_id: "FSTSMS",
+      message: `Your OTP for phone number verification is ${OTP} - Expense Management System (Admin).`,
+      language: "english",
+      route: "q",
+      numbers: phoneNumber,
+    };
+
+    try {
+      const response = await axios.post(
+        "https://www.fast2sms.com/dev/bulkV2",
+        messageData,
+        {
+          headers: {
+            Authorization: process.env.FAST2SMS_API_KEY,
+          },
+        }
+      );
+
+      console.log("SMS Response: ", response);
+    } catch (smsError) {
+      console.error("SMS sending error:", smsError);
+      // Continue even if SMS fails (for development/testing)
+    }
+
+    // Check if phone number already exists in AdminPhoneNumberModel
+    const existingPhone = await AdminPhoneNumberModel.findOne({
+      phoneNumber: phoneNumber,
+    });
+
+    if (existingPhone) {
+      // Update OTP and link to admin
+      existingPhone.otp = String(OTP);
+      existingPhone.isVerified = false;
+      existingPhone.adminId = adminId;
+      await existingPhone.save();
+    } else {
+      // Create new entry
+      const newAdminPhoneNumber = new AdminPhoneNumberModel({
+        phoneNumber: phoneNumber,
+        otp: String(OTP),
+        adminId: adminId,
+        isVerified: false,
+      });
+      await newAdminPhoneNumber.save();
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "OTP sent successfully. Check your phone and verify with your OTP...!",
+      phoneNumber: phoneNumber,
+    });
+  } catch (error) {
+    console.error("Send admin phone OTP error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Something went wrong in sending OTP for phone number verification...!",
+      error: error.message,
+    });
+  }
+};
+
+// Verify Admin Phone OTP and Update Profile
+const verifyAdminPhoneOTP = async (req, res) => {
+  try {
+    const { adminId, phoneNumber, otp } = req.body;
+
+    // Validate inputs
+    if (!adminId) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Admin ID is required!",
+      });
+    }
+
+    if (!phoneNumber || !otp) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Phone number and OTP are required...!",
+      });
+    }
+
+    // Verify admin exists and is active
+    const admin = await adminModel.findOne({
+      adminId: adminId,
+      isActive: true,
+    });
+
+    if (!admin) {
+      return res.status(401).json({
+        status: "failed",
+        message: "Invalid or inactive admin ID!",
+      });
+    }
+
+    // Find phone record
+    const phoneRecord = await AdminPhoneNumberModel.findOne({
+      phoneNumber: phoneNumber,
+      adminId: adminId,
+    });
+
+    if (!phoneRecord) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid or Expired OTP...!",
+      });
+    }
+
+    if (phoneRecord.otp !== String(otp)) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid or Expired OTP...!",
+      });
+    }
+
+    // Update admin phone number and verification status
+    admin.phone = phoneNumber.trim();
+    admin.isPhoneVerified = true;
+    await admin.save();
+
+    // Mark phone as verified in AdminPhoneNumberModel
+    phoneRecord.isVerified = true;
+    phoneRecord.otp = "null";
+    await phoneRecord.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Phone number verified and updated successfully!",
+      admin: {
+        adminId: admin.adminId,
+        email: admin.email,
+        name: admin.name,
+        phone: admin.phone,
+        isPhoneVerified: admin.isPhoneVerified,
+        isRequestApproved: admin.isRequestApproved,
+        isActive: admin.isActive,
+        createdAt: admin.createdAt,
+        lastLogin: admin.lastLogin,
+      },
+    });
+  } catch (error) {
+    console.error("Verify admin phone OTP error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Failed to verify phone number.",
+      error: error.message,
+    });
+  }
+};
+
 // Deactivate Admin Account
 const deactivateAdminAccount = async (req, res) => {
   try {
@@ -543,5 +745,7 @@ module.exports = {
   getDashboardData,
   getAdminProfile,
   updateAdminPhone,
+  sendOTPForAdminPhoneVerification,
+  verifyAdminPhoneOTP,
   deactivateAdminAccount,
 };

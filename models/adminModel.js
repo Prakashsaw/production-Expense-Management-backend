@@ -27,6 +27,10 @@ const adminSchema = new mongoose.Schema(
       type: String,
       default: "Not Provided",
     },
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
     isRequestApproved: {
       type: Boolean,
       default: false,
