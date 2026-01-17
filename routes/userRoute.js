@@ -12,6 +12,11 @@ const {
   verifyMobileNumberThroughOTP,
   updateUserProfile,
   loginControllerThroughEmail,
+  sendPhoneOTPForProfileUpdate,
+  verifyPhoneOTPAndUpdateProfile,
+  sendSecondaryEmailOTP,
+  verifySecondaryEmailOTP,
+  removeSecondaryEmail,
 } = require("../controllers/userController");
 
 const checkUserAuth = require("../middleware/userAuth");
@@ -53,6 +58,16 @@ router.post("/update-user-profile", checkUserAuth, updateUserProfile);
 router.post("/change-password", checkUserAuth, changePassword);
 // GET : LOGGED USER / USER PROFILE
 router.get("/logged-user", checkUserAuth, loggedUser);
+// POST : SEND PHONE OTP FOR PROFILE UPDATE
+router.post("/send-phone-otp-profile", checkUserAuth, sendPhoneOTPForProfileUpdate);
+// POST : VERIFY PHONE OTP AND UPDATE PROFILE
+router.post("/verify-phone-otp-profile", checkUserAuth, verifyPhoneOTPAndUpdateProfile);
+// POST : SEND SECONDARY EMAIL OTP
+router.post("/send-secondary-email-otp", checkUserAuth, sendSecondaryEmailOTP);
+// POST : VERIFY SECONDARY EMAIL OTP
+router.post("/verify-secondary-email-otp", checkUserAuth, verifySecondaryEmailOTP);
+// POST : REMOVE SECONDARY EMAIL
+router.post("/remove-secondary-email", checkUserAuth, removeSecondaryEmail);
 
 // Export the router
 module.exports = router;

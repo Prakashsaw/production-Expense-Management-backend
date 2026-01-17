@@ -11,6 +11,15 @@ const userOTPSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    email: {
+      type: String,
+      default: null,
+    },
+    emailType: {
+      type: String,
+      enum: ["primary", "secondary"],
+      default: "primary",
+    },
     createdAt: {
       type: Date,
       default: Date.now,

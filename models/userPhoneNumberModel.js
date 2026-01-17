@@ -14,6 +14,10 @@ const userPhoneNumberSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    expenseAppUserId: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

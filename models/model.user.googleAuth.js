@@ -28,6 +28,18 @@ const googleAuthUserSchema = new mongoose.Schema(
       type: String,
       default: "Not Provided",
     },
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    secondaryEmail: {
+      type: String,
+      default: null,
+    },
+    isSecondaryEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
     address: {
       type: String,
       default: "Not Provided",

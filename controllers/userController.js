@@ -455,14 +455,16 @@ const loggedUser = async (req, res) => {
     user: {
       name: user.name,
       email: user.email,
-
       phoneNumber: user.phoneNumber ?? "Not Provided",
+      isPhoneVerified: user.isPhoneVerified ?? false,
       address: user.address ?? "Not Provided",
       favouriteSport: user.favouriteSport ?? "Not Provided",
-
       birthDate: user.birthDate ?? "",
-
       gender: user.gender ?? "Prefer not to say",
+      isVerified: user.isVerified ?? false,
+      secondaryEmail: user.secondaryEmail ?? null,
+      isSecondaryEmailVerified: user.isSecondaryEmailVerified ?? false,
+      createdAt: user.createdAt,
     },
   });
 };
@@ -502,37 +504,55 @@ const updateUserProfile = async (req, res) => {
 
     // Update regular user if exists
     if (user) {
+      const updateData = {
+        name: name,
+        email: email,
+        address: address,
+        birthDate: String(birthDate),
+        favouriteSport: favouriteSport,
+        gender: gender,
+      };
+      
+      // Only update phoneNumber if it's different, and preserve isPhoneVerified status
+      // If phone number is being changed, isPhoneVerified should be handled by phone OTP verification endpoint
+      if (String(phoneNumber) !== user.phoneNumber) {
+        updateData.phoneNumber = String(phoneNumber);
+        // If phone number is changed, reset verification status (will be set to true after OTP verification)
+        updateData.isPhoneVerified = false;
+      } else {
+        // Keep existing phone number and verification status
+        updateData.phoneNumber = user.phoneNumber;
+        // Don't update isPhoneVerified if phone number hasn't changed
+      }
+
       await userModel.findOneAndUpdate(
         { expenseAppUserId: req.user.expenseAppUserId },
-        {
-          $set: {
-            name: name,
-            email: email,
-            phoneNumber: String(phoneNumber),
-            address: address,
-            birthDate: String(birthDate),
-            favouriteSport: favouriteSport,
-            gender: gender,
-          },
-        }
+        { $set: updateData }
       );
     }
 
     // Update Google auth user if exists
     if (googleUser) {
+      const updateData = {
+        name: name,
+        email: email,
+        address: address,
+        birthDate: String(birthDate),
+        favouriteSport: favouriteSport,
+        gender: gender,
+      };
+      
+      // Only update phoneNumber if it's different, and preserve isPhoneVerified status
+      if (String(phoneNumber) !== googleUser.phoneNumber) {
+        updateData.phoneNumber = String(phoneNumber);
+        updateData.isPhoneVerified = false;
+      } else {
+        updateData.phoneNumber = googleUser.phoneNumber;
+      }
+
       await GoogleAuthUserModel.findOneAndUpdate(
         { expenseAppUserId: req.user.expenseAppUserId },
-        {
-          $set: {
-            name: name,
-            email: email,
-            phoneNumber: String(phoneNumber),
-            address: address,
-            birthDate: String(birthDate),
-            favouriteSport: favouriteSport,
-            gender: gender,
-          },
-        }
+        { $set: updateData }
       );
     }
 
@@ -955,6 +975,391 @@ const verifyMobileNumberThroughOTP = async (req, res) => {
   }
 };
 
+// Send OTP for phone verification during profile update: Login required
+const sendPhoneOTPForProfileUpdate = async (req, res) => {
+  const { phoneNumber } = req.body;
+  const expenseAppUserId = req.user.expenseAppUserId;
+
+  try {
+    if (!phoneNumber) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Phone number field required...!",
+      });
+    }
+
+    // Generate OTP: 6 digit random number
+    const OTP = Math.floor(100000 + Math.random() * 900000);
+
+    // Send OTP via SMS
+    const messageData = {
+      sender_id: "FSTSMS",
+      message: `Your OTP for phone number verification is ${OTP} - Expense Management System.`,
+      language: "english",
+      route: "q",
+      numbers: phoneNumber,
+    };
+
+    const response = await axios.post(
+      "https://www.fast2sms.com/dev/bulkV2",
+      messageData,
+      {
+        headers: {
+          Authorization: process.env.FAST2SMS_API_KEY,
+        },
+      }
+    );
+
+    console.log("SMS Response: ", response);
+
+    // Check if phone number already exists in UserPhoneNumberModel
+    const existingPhone = await UserPhoneNumberModel.findOne({
+      phoneNumber: phoneNumber,
+    });
+
+    if (existingPhone) {
+      // Update OTP
+      existingPhone.otp = String(OTP);
+      existingPhone.isVerified = false;
+      existingPhone.expenseAppUserId = expenseAppUserId;
+      await existingPhone.save();
+    } else {
+      // Create new entry
+      const newUserPhoneNumber = new UserPhoneNumberModel({
+        phoneNumber: phoneNumber,
+        otp: String(OTP),
+        expenseAppUserId: expenseAppUserId,
+        isVerified: false,
+      });
+      await newUserPhoneNumber.save();
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "OTP sent successfully. Check your phone and verify with your OTP...!",
+      phoneNumber: phoneNumber,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status: "failed",
+      message: "Something went wrong in sending OTP for phone number verification...!",
+    });
+  }
+};
+
+// Verify phone OTP and update user profile: Login required
+const verifyPhoneOTPAndUpdateProfile = async (req, res) => {
+  const { phoneNumber, otp } = req.body;
+  const expenseAppUserId = req.user.expenseAppUserId;
+
+  try {
+    if (!phoneNumber || !otp) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Phone number and OTP are required...!",
+      });
+    }
+
+    const phoneRecord = await UserPhoneNumberModel.findOne({
+      phoneNumber: phoneNumber,
+      expenseAppUserId: expenseAppUserId,
+    });
+
+    if (!phoneRecord) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid or Expired OTP...!",
+      });
+    }
+
+    if (phoneRecord.otp !== String(otp)) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid or Expired OTP...!",
+      });
+    }
+
+    // Check if user exists in regular userModel or GoogleAuthUserModel
+    const user = await userModel.findOne({ expenseAppUserId: expenseAppUserId });
+    const googleUser = await GoogleAuthUserModel.findOne({ expenseAppUserId: expenseAppUserId });
+
+    if (!user && !googleUser) {
+      return res.status(400).json({
+        status: "failed",
+        message: "User doesn't exist or Unauthorized user...!",
+      });
+    }
+
+    // Update phone number and verification status
+    if (user) {
+      await userModel.findOneAndUpdate(
+        { expenseAppUserId: expenseAppUserId },
+        {
+          $set: {
+            phoneNumber: phoneNumber,
+            isPhoneVerified: true,
+          },
+        }
+      );
+    }
+
+    if (googleUser) {
+      await GoogleAuthUserModel.findOneAndUpdate(
+        { expenseAppUserId: expenseAppUserId },
+        {
+          $set: {
+            phoneNumber: phoneNumber,
+            isPhoneVerified: true,
+          },
+        }
+      );
+    }
+
+    // Mark phone as verified in UserPhoneNumberModel
+    phoneRecord.isVerified = true;
+    phoneRecord.otp = "null";
+    await phoneRecord.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Phone number verified and updated successfully...!",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status: "failed",
+      message: "Something went wrong in verifying phone number...!",
+    });
+  }
+};
+
+// Send OTP for secondary email verification: Login required
+const sendSecondaryEmailOTP = async (req, res) => {
+  const { secondaryEmail } = req.body;
+  const expenseAppUserId = req.user.expenseAppUserId;
+
+  try {
+    if (!secondaryEmail) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Secondary email field required...!",
+      });
+    }
+
+    // Check if secondary email is same as primary email
+    const user = await userModel.findOne({ expenseAppUserId: expenseAppUserId });
+    const googleUser = await GoogleAuthUserModel.findOne({ expenseAppUserId: expenseAppUserId });
+    const currentUser = user || googleUser;
+
+    if (currentUser && currentUser.email === secondaryEmail) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Secondary email cannot be same as primary email...!",
+      });
+    }
+
+    // Generate OTP: 6 digit random number
+    const OTP = Math.floor(100000 + Math.random() * 900000);
+
+    // Send OTP via email
+    try {
+      const info = await sendMailThroughBrevo({
+        to: secondaryEmail,
+        subject: "OTP for Secondary Email Verification - Expense Management System",
+        html: OTPVerificationEmail({ name: currentUser?.name || "User", email: secondaryEmail }, OTP, process.env.EMAIL_FROM)
+      });
+    } catch (error) {
+      console.error("OTP verification mail failed to send...! Error:", error);
+      return res.status(400).json({
+        status: "failed",
+        message: "OTP verification mail failed to send...!",
+      });
+    }
+
+    // Check if user OTP record exists
+    const userOTP = await UserOTPModel.findOne({
+      expenseAppUserId: expenseAppUserId,
+      emailType: "secondary",
+    });
+
+    if (userOTP) {
+      // Update OTP
+      await UserOTPModel.findOneAndUpdate(
+        { expenseAppUserId: expenseAppUserId, emailType: "secondary" },
+        {
+          $set: {
+            otp: String(OTP),
+            email: secondaryEmail,
+          },
+        }
+      );
+    } else {
+      // Create new OTP record
+      const newUserOTP = new UserOTPModel({
+        expenseAppUserId: expenseAppUserId,
+        otp: String(OTP),
+        email: secondaryEmail,
+        emailType: "secondary",
+      });
+      await newUserOTP.save();
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "OTP sent successfully. Please Check Your Email...!",
+      secondaryEmail: secondaryEmail,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status: "failed",
+      message: "Something went wrong in sending OTP for secondary email verification...!",
+    });
+  }
+};
+
+// Verify secondary email OTP and update profile: Login required
+const verifySecondaryEmailOTP = async (req, res) => {
+  const { secondaryEmail, otp } = req.body;
+  const expenseAppUserId = req.user.expenseAppUserId;
+
+  try {
+    if (!secondaryEmail || !otp) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Secondary email and OTP are required...!",
+      });
+    }
+
+    const userOTP = await UserOTPModel.findOne({
+      expenseAppUserId: expenseAppUserId,
+      email: secondaryEmail,
+      emailType: "secondary",
+    });
+
+    if (!userOTP) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid or Expired OTP...!",
+      });
+    }
+
+    if (userOTP.otp !== String(otp)) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid or Expired OTP...!",
+      });
+    }
+
+    // Check if user exists
+    const user = await userModel.findOne({ expenseAppUserId: expenseAppUserId });
+    const googleUser = await GoogleAuthUserModel.findOne({ expenseAppUserId: expenseAppUserId });
+
+    if (!user && !googleUser) {
+      return res.status(400).json({
+        status: "failed",
+        message: "User doesn't exist or Unauthorized user...!",
+      });
+    }
+
+    // Update secondary email and verification status
+    if (user) {
+      await userModel.findOneAndUpdate(
+        { expenseAppUserId: expenseAppUserId },
+        {
+          $set: {
+            secondaryEmail: secondaryEmail,
+            isSecondaryEmailVerified: true,
+          },
+        }
+      );
+    }
+
+    if (googleUser) {
+      await GoogleAuthUserModel.findOneAndUpdate(
+        { expenseAppUserId: expenseAppUserId },
+        {
+          $set: {
+            secondaryEmail: secondaryEmail,
+            isSecondaryEmailVerified: true,
+          },
+        }
+      );
+    }
+
+    // Delete OTP record
+    await UserOTPModel.findOneAndDelete({
+      expenseAppUserId: expenseAppUserId,
+      emailType: "secondary",
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Secondary email verified and added successfully...!",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status: "failed",
+      message: "Something went wrong in verifying secondary email...!",
+    });
+  }
+};
+
+// Remove secondary email: Login required
+const removeSecondaryEmail = async (req, res) => {
+  const expenseAppUserId = req.user.expenseAppUserId;
+
+  try {
+    const user = await userModel.findOne({ expenseAppUserId: expenseAppUserId });
+    const googleUser = await GoogleAuthUserModel.findOne({ expenseAppUserId: expenseAppUserId });
+
+    if (!user && !googleUser) {
+      return res.status(400).json({
+        status: "failed",
+        message: "User doesn't exist or Unauthorized user...!",
+      });
+    }
+
+    // Remove secondary email
+    if (user) {
+      await userModel.findOneAndUpdate(
+        { expenseAppUserId: expenseAppUserId },
+        {
+          $set: {
+            secondaryEmail: null,
+            isSecondaryEmailVerified: false,
+          },
+        }
+      );
+    }
+
+    if (googleUser) {
+      await GoogleAuthUserModel.findOneAndUpdate(
+        { expenseAppUserId: expenseAppUserId },
+        {
+          $set: {
+            secondaryEmail: null,
+            isSecondaryEmailVerified: false,
+          },
+        }
+      );
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Secondary email removed successfully...!",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status: "failed",
+      message: "Something went wrong in removing secondary email...!",
+    });
+  }
+};
+
 module.exports = {
   registerController,
   verifyEmail,
@@ -968,4 +1373,9 @@ module.exports = {
   verifyEmailThroughOTP,
   sendOTPForMobileVerification,
   verifyMobileNumberThroughOTP,
+  sendPhoneOTPForProfileUpdate,
+  verifyPhoneOTPAndUpdateProfile,
+  sendSecondaryEmailOTP,
+  verifySecondaryEmailOTP,
+  removeSecondaryEmail,
 };
