@@ -36,6 +36,9 @@ app.use("/api/v1/transections", require("./routes/transectionRoutes"));
 // user information/help routes
 app.use("/api/v1/user-information", require("./routes/userInfoRoutes"));
 
+// category routes
+app.use("/api/v1/categories", require("./routes/categoryRoutes"));
+
 // admin routes
 app.use("/api/v1/admin", require("./routes/adminRoutes"));
 
