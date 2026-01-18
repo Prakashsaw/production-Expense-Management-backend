@@ -39,6 +39,9 @@ app.use("/api/v1/user-information", require("./routes/userInfoRoutes"));
 // category routes
 app.use("/api/v1/categories", require("./routes/categoryRoutes"));
 
+// budget routes
+app.use("/api/v1/budgets", require("./routes/budgetRoutes"));
+
 // admin routes
 app.use("/api/v1/admin", require("./routes/adminRoutes"));
 
