@@ -42,6 +42,9 @@ app.use("/api/v1/categories", require("./routes/categoryRoutes"));
 // budget routes
 app.use("/api/v1/budgets", require("./routes/budgetRoutes"));
 
+// bill reminder routes
+app.use("/api/v1/bills", require("./routes/billReminderRoutes"));
+
 // admin routes
 app.use("/api/v1/admin", require("./routes/adminRoutes"));
 
@@ -62,6 +65,10 @@ app.get("/", (req, res) => {
         </ul></div>
     </div>`);
 });
+
+// Initialize bill reminder scheduler
+const { initializeBillReminderScheduler } = require("./services/billReminderScheduler");
+initializeBillReminderScheduler();
 
 //listen server
 app.listen(PORT, () => {
