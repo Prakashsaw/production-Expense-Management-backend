@@ -191,10 +191,111 @@ const deleteTransaction = async (req, res) => {
   }
 };
 
+// Advanced Search for transactions
+const advancedSearch = async (req, res) => {
+  try {
+    const {
+      minAmount,
+      maxAmount,
+      startDate,
+      endDate,
+      category,
+      type,
+      description,
+      refrence,
+      sortBy = "date",
+      sortOrder = "desc",
+      limit = 100,
+      skip = 0,
+    } = req.body;
+
+    // Build query object
+    const query = {
+      expenseAppUserId: req.user.expenseAppUserId,
+    };
+
+    // Amount range filter
+    if (minAmount !== undefined || maxAmount !== undefined) {
+      query.amount = {};
+      if (minAmount !== undefined) {
+        query.amount.$gte = Number(minAmount);
+      }
+      if (maxAmount !== undefined) {
+        query.amount.$lte = Number(maxAmount);
+      }
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) {
+        query.date.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Set end date to end of day
+        const endDateObj = new Date(endDate);
+        endDateObj.setHours(23, 59, 59, 999);
+        query.date.$lte = endDateObj;
+      }
+    }
+
+    // Category filter
+    if (category && category.trim() !== "") {
+      query.category = { $regex: category.trim(), $options: "i" };
+    }
+
+    // Type filter
+    if (type && type !== "all") {
+      query.type = type;
+    }
+
+    // Description filter (keyword search)
+    if (description && description.trim() !== "") {
+      query.description = { $regex: description.trim(), $options: "i" };
+    }
+
+    // Reference filter
+    if (refrence && refrence.trim() !== "") {
+      query.refrence = { $regex: refrence.trim(), $options: "i" };
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    // Execute query
+    const transactions = await transectionModel
+      .find(query)
+      .sort(sort)
+      .limit(Number(limit))
+      .skip(Number(skip));
+
+    // Get total count for pagination
+    const totalCount = await transectionModel.countDocuments(query);
+
+    res.status(200).json({
+      status: "success",
+      message: "Advanced search completed successfully.",
+      transactions: transactions,
+      totalCount: totalCount,
+      currentPage: Math.floor(skip / limit) + 1,
+      totalPages: Math.ceil(totalCount / limit),
+    });
+  } catch (error) {
+    console.log("Error in advanced search:", error);
+    res.status(500).json({
+      status: "failed",
+      message: "Failed to perform advanced search.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllTransaction,
   getOneTransaction,
   addTransaction,
   editTransaction,
   deleteTransaction,
+  advancedSearch,
 };

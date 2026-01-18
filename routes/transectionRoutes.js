@@ -5,6 +5,7 @@ const {
   editTransaction,
   deleteTransaction,
   getOneTransaction,
+  advancedSearch,
 } = require("../controllers/transactionController");
 const checkUserAuth = require("../middleware/userAuth");
 
@@ -30,5 +31,8 @@ router.post(
   checkUserAuth,
   deleteTransaction
 );
+
+// Advanced Search
+router.post("/advanced-search", checkUserAuth, advancedSearch);
 
 module.exports = router;
