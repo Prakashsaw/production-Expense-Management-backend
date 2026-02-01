@@ -5,6 +5,7 @@ const validator = require("validator");
 const transporter = require("../config/emailConfig");
 const CLIENT_URL = require("../utils/baseURL");
 const UserTokenModel = require("../models/userTokenModel");
+const refreshTokenModel = require("../models/refreshTokenModel");
 const emailVerificationEmail = require("../utils/emailTemplates/emailVerificationEmail");
 const resetPasswordEmail = require("../utils/emailTemplates/resetPasswordEmail");
 const resetPasswordSuccess = require("../utils/emailTemplates/resetPasswordSuccess");
@@ -13,6 +14,7 @@ const UserOTPModel = require("../models/userOTPModel");
 const OTPVerificationEmail = require("../utils/emailTemplates/OTPVerificationEmail");
 const axios = require("axios");
 const UserPhoneNumberModel = require("../models/userPhoneNumberModel");
+const crypto = require("crypto");
 
 const { customAlphabet } = require("nanoid");
 const GoogleAuthUserModel = require("../models/model.user.googleAuth");
@@ -20,12 +22,46 @@ const sendMailThroughBrevo = require("../services/brevoEmailService");
 const alphabet =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
+// Create access token (short-lived)
 const createToken = (expenseAppUserId) => {
   const jwtSecreteKey = process.env.JWT_SECRETE_KEY;
 
   return jwt.sign({ expenseAppUserId }, jwtSecreteKey, {
     expiresIn: process.env.EXPIRE_IN,
   });
+};
+
+// Create refresh token (long-lived - 7 days)
+const createRefreshToken = () => {
+  // Generate a secure random token
+  return crypto.randomBytes(64).toString("hex");
+};
+
+// Save refresh token to database
+const saveRefreshToken = async (expenseAppUserId, refreshToken, req = null) => {
+  try {
+    // Deactivate old refresh tokens for this user (optional: keep only one active token per user)
+    // Or keep multiple tokens for multiple devices
+    // For now, we'll keep multiple tokens (one per device/session)
+    
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 7); // 7 days from now
+
+    const refreshTokenDoc = new refreshTokenModel({
+      expenseAppUserId,
+      refreshToken,
+      expiresAt: expirationDate,
+      isActive: true,
+      deviceInfo: req?.headers["user-agent"] || null,
+      ipAddress: req?.ip || req?.connection?.remoteAddress || null,
+    });
+
+    await refreshTokenDoc.save();
+    return refreshTokenDoc;
+  } catch (error) {
+    console.error("Error saving refresh token:", error);
+    throw error;
+  }
 };
 
 //Register Callback: Login not required
@@ -97,8 +133,12 @@ const registerController = async (req, res) => {
 
     await newUser.save();
 
-    // For jwt token
+    // For jwt token (access token)
     const jwt_token = createToken(newUser.expenseAppUserId);
+    
+    // Generate refresh token
+    const refresh_token = createRefreshToken();
+    await saveRefreshToken(newUser.expenseAppUserId, refresh_token, req);
 
     // Now create model in UserTokenModel for verification of email and save it
     const userToken = new UserTokenModel({
@@ -154,6 +194,7 @@ const registerController = async (req, res) => {
         expenseAppUserId: newUser.expenseAppUserId,
         name: newUser.name,
         token: jwt_token,
+        refreshToken: refresh_token,
         isVerified: newUser.isVerified,
       },
       Status: "Success",
@@ -379,6 +420,10 @@ const loginControllerThroughEmail = async (req, res) => {
 
     // Now start the JWT process here
     const jwt_token = createToken(user.expenseAppUserId);
+    
+    // Generate refresh token
+    const refresh_token = createRefreshToken();
+    await saveRefreshToken(user.expenseAppUserId, refresh_token, req);
 
     // If user is not verified then send email verification link again
     if (!user.isVerified) {
@@ -433,6 +478,7 @@ const loginControllerThroughEmail = async (req, res) => {
         expenseAppUserId: user.expenseAppUserId,
         name: user.name,
         token: jwt_token,
+        refreshToken: refresh_token,
         isVerified: user.isVerified,
       },
       Status: "Success",
@@ -1360,6 +1406,102 @@ const removeSecondaryEmail = async (req, res) => {
   }
 };
 
+// Refresh Token Controller: No login required (but refresh token required)
+const refreshTokenController = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Refresh token is required",
+      });
+    }
+
+    // Find the refresh token in database
+    const tokenDoc = await refreshTokenModel.findOne({
+      refreshToken,
+      isActive: true,
+    });
+
+    if (!tokenDoc) {
+      return res.status(401).json({
+        status: "failed",
+        message: "Invalid or expired refresh token. Please login again.",
+        code: "REFRESH_TOKEN_INVALID",
+      });
+    }
+
+    // Check if refresh token is expired
+    if (new Date() > tokenDoc.expiresAt) {
+      // Deactivate expired token
+      await refreshTokenModel.findOneAndUpdate(
+        { refreshToken },
+        { $set: { isActive: false } }
+      );
+
+      return res.status(401).json({
+        status: "failed",
+        message: "Refresh token has expired. Please login again.",
+        code: "REFRESH_TOKEN_EXPIRED",
+      });
+    }
+
+    // Verify user exists
+    const user =
+      (await userModel
+        .findOne({ expenseAppUserId: tokenDoc.expenseAppUserId })
+        .select("-password")
+        .lean()) ||
+      (await GoogleAuthUserModel.findOne({ expenseAppUserId: tokenDoc.expenseAppUserId })
+        .select("-googleId")
+        .lean());
+
+    if (!user) {
+      // Deactivate token if user doesn't exist
+      await refreshTokenModel.findOneAndUpdate(
+        { refreshToken },
+        { $set: { isActive: false } }
+      );
+
+      return res.status(401).json({
+        status: "failed",
+        message: "User not found. Please login again.",
+        code: "USER_NOT_FOUND",
+      });
+    }
+
+    // Generate new access token
+    const newAccessToken = createToken(user.expenseAppUserId);
+
+    // Optionally, generate a new refresh token (rotate refresh token for security)
+    // For now, we'll keep the same refresh token until it expires
+    // You can uncomment below to rotate refresh tokens:
+    /*
+    const newRefreshToken = createRefreshToken();
+    await refreshTokenModel.findOneAndUpdate(
+      { refreshToken },
+      { $set: { isActive: false } }
+    );
+    await saveRefreshToken(user.expenseAppUserId, newRefreshToken, req);
+    */
+
+    return res.status(200).json({
+      status: "success",
+      message: "Token refreshed successfully",
+      accessToken: newAccessToken,
+      refreshToken: refreshToken, // Return same refresh token (or new one if rotating)
+    });
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "Failed to refresh token. Please login again.",
+      code: "REFRESH_TOKEN_ERROR",
+    });
+  }
+};
+
 module.exports = {
   registerController,
   verifyEmail,
@@ -1378,4 +1520,5 @@ module.exports = {
   sendSecondaryEmailOTP,
   verifySecondaryEmailOTP,
   removeSecondaryEmail,
+  refreshTokenController,
 };

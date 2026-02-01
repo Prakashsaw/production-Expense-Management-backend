@@ -17,6 +17,7 @@ const {
   sendSecondaryEmailOTP,
   verifySecondaryEmailOTP,
   removeSecondaryEmail,
+  refreshTokenController,
 } = require("../controllers/userController");
 
 const checkUserAuth = require("../middleware/userAuth");
@@ -31,6 +32,8 @@ router.post("/register", registerController);
 router.post("/verify-email/:expenseAppUserId/:token", verifyEmail);
 // POST : LOGIN USER
 router.post("/login", loginControllerThroughEmail);
+// POST : Refresh Access Token
+router.post("/refresh-token", refreshTokenController);
 // POST : Send reset password email
 router.post("/send-reset-password-email", sendUserPasswordResetEmail);
 // Reset password through forgot password email

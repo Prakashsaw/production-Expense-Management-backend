@@ -41,9 +41,21 @@ const checkUserAuth = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Auth Middleware Error:", error);
+    
+    // Check if token is expired
+    if (error.name === "TokenExpiredError" || error.name === "JsonWebTokenError") {
+      return res.status(401).send({
+        status: "failed",
+        message: "Unauthorized: Invalid or expired token, login again...!",
+        code: error.name === "TokenExpiredError" ? "TOKEN_EXPIRED" : "TOKEN_INVALID",
+        expired: error.name === "TokenExpiredError",
+      });
+    }
+    
     return res.status(401).send({
       status: "failed",
       message: "Unauthorized: Invalid or expired token, login again...!",
+      code: "AUTH_ERROR",
     });
   }
 };

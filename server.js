@@ -45,6 +45,9 @@ app.use("/api/v1/budgets", require("./routes/budgetRoutes"));
 // bill reminder routes
 app.use("/api/v1/bills", require("./routes/billReminderRoutes"));
 
+// group expense routes
+app.use("/api/v1/groups", require("./routes/groupRoutes"));
+
 // admin routes
 app.use("/api/v1/admin", require("./routes/adminRoutes"));
 
